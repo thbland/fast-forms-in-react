@@ -1,93 +1,97 @@
-import React, {useRef} from 'react'
-import Input from './Input'
-import FIELDS from '../FIELDS'
-import serialize from '../utils/serialize-formdata'
-import './Form.css'
+import React, { useRef } from 'react';
+import Input from './Input';
+import FIELDS from '../FIELDS';
+import serialize from '../utils/serialize-formdata';
+import './Form.css';
 
 export default function Form() {
-  const form = useRef(null)
-  const inputWithError = useRef(null)
+  const form = useRef(null);
+  const inputWithError = useRef(null);
 
-  const fieldRefs = useRef({})
+  const fieldRefs = useRef({});
 
   const registerField = (key, ref) => {
-    fieldRefs.current = {...fieldRefs.current, [key]: ref}
-  }
-  
+    fieldRefs.current = { ...fieldRefs.current, [key]: ref };
+  };
+
   const getField = (key) => {
     return (
       Array.isArray(fieldRefs.current[key].current)
         ? fieldRefs.current[key].current[0]
         : fieldRefs.current[key]
-    ).current
-  }
+    ).current;
+  };
 
   const resetError = (errorFieldKey) => {
     if (errorFieldKey) {
-      const field = getField(errorFieldKey)
+      const field = getField(errorFieldKey);
       if (!field) {
-        return
+        return;
       }
       field.setCustomValidity('');
       field.reportValidity();
     }
-  }
+  };
 
   const handleChange = (key, ...args) => {
-    resetError(inputWithError.current)
-  }
+    resetError(inputWithError.current);
+  };
 
   const customValidations = FIELDS.reduce(
-    (acc, field) => field?.validations
-      ? {...acc, [field.name]: field.validations}
-      : acc
-    , {}
-  )
+    (acc, field) =>
+      field?.validations ? { ...acc, [field.name]: field.validations } : acc,
+    {},
+  );
 
   const onSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (inputWithError.current) {
-      resetError(inputWithError.current)
+      resetError(inputWithError.current);
     }
 
     if (!form.current.checkValidity()) {
       return false;
     }
 
-    const formData = serialize(new FormData(form.current))
-    
-    let error = null
+    const formData = serialize(new FormData(form.current));
+
+    let error = null;
     // Check for custom validations
     const isValid = Object.keys(customValidations).reduce((acc, key) => {
-      const validations = customValidations[key]
+      const validations = customValidations[key];
       const validity = validations.reduce((prevResult, validatorFn) => {
         // short circuit the validations if previous one has failed
         if (!prevResult) {
-          return false
+          return false;
         }
         // previous one was valid, let's check for current validator and return the result
-        const [valid, err] = validatorFn(formData[key], key, formData, form.current)
+        const [valid, err] = validatorFn(
+          formData[key],
+          key,
+          formData,
+          form.current,
+        );
         if (!valid) {
-          error = err
+          error = err;
         }
-        return valid
-      }, true)
+        return valid;
+      }, true);
 
       acc[key] = validity;
       return acc;
-    }, {})
-    
+    }, {});
+
     if (Object.keys(isValid).length) {
-      const errField = Object.keys(isValid)[0]
-      inputWithError.current = errField
-      const field = getField(errField)
+      const errField = Object.keys(isValid)[0];
+      inputWithError.current = errField;
+      const field = getField(errField);
       if (!field) {
-        return
+        return;
       }
       field.setCustomValidity(error);
       field.reportValidity();
     }
-  }
+  };
 
   return (
     <form className="form" ref={form} onSubmit={onSubmit}>
@@ -99,7 +103,7 @@ export default function Form() {
           onChange={handleChange}
         />
       ))}
-      <button type='submit'>Submit</button>
+      <button type="submit">Submit</button>
     </form>
-  )
+  );
 }
